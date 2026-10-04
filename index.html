@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>slope9.io - Portal de Juegos gratis online</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Press Start 2P -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#050505',
+                        neonGreen: '#00ff66',
+                        neonDarkGreen: '#00aa44',
+                        cardBg: '#121212',
+                        panelBorder: '#00ff6633'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        pixel: ['"Press Start 2P"', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Neon Glow Effects */
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.25);
+            border: 1px solid rgba(0, 255, 102, 0.4);
+        }
+
+        .neon-glow-hover:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.6);
+            border-color: #00ff66;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff66;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00cc52;
+        }
+
+        /* Hover card overlay styling */
+        .game-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .game-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(5, 5, 5, 0.95) 10%, rgba(5, 5, 5, 0.4) 60%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0.75rem;
+        }
+
+        .game-card:hover .game-card-overlay {
+            opacity: 1;
+        }
+
+        .game-card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover .game-card-img {
+            transform: scale(1.08);
+        }
+
+        /* Game Screen Aspect Ratio Container */
+        .viewport-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #000;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .viewport-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-neonGreen selection:text-black">
+
+    <header class="sticky top-0 z-50 bg-darkBg/95 backdrop-blur-md border-b border-neonGreen/30 py-3 px-4 md:px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="selectGame('slope-game')">
+                <div class="w-10 h-10 rounded-lg bg-black border border-neonGreen flex items-center justify-center neon-glow">
+                    <span class="font-pixel text-neonGreen text-xl font-bold">S9</span>
+                </div>
+                <h1 class="font-black text-2xl md:text-3xl tracking-wider text-white uppercase italic">
+                    SLOPE<span class="text-neonGreen neon-text">9.IO</span>
+                </h1>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative w-full md:w-96">
+                <input type="text" id="searchInput" oninput="filterGames()" placeholder="LOCALIZAR SOFTWARE..." 
+                       class="w-full bg-black/80 border border-neonGreen/40 rounded-full px-5 py-2 pl-11 text-sm text-neonGreen placeholder-gray-500 focus:outline-none focus:border-neonGreen focus:ring-1 focus:ring-neonGreen transition-all">
+                <svg class="w-5 h-5 text-neonGreen absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+
+            <!-- System Status & Fullscreen Controls -->
+            <div class="flex items-center space-x-4 text-xs">
+                <div class="hidden sm:flex items-center space-x-2 bg-black px-3 py-1.5 rounded-full border border-gray-800">
+                    <span class="w-2 h-2 rounded-full bg-neonGreen animate-pulse"></span>
+                    <span class="text-gray-400">SYSTEM: <strong class="text-neonGreen">READY WORKING</strong></span>
+                </div>
+                <div class="hidden lg:flex items-center space-x-2 bg-black px-3 py-1.5 rounded-full border border-gray-800">
+                    <span class="text-gray-400">PLAYERS: <strong id="playerCount" class="text-neonGreen">4,120</strong></span>
+                </div>
+                <button onclick="toggleFullScreen()" class="bg-neonGreen hover:bg-neonDarkGreen text-black font-bold px-4 py-2 rounded-lg transition-all duration-200 text-xs tracking-wider flex items-center space-x-1 uppercase">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                    <span>FULLSCREEN</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-6 flex-grow w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Left Column: Main Game Embed Viewport & Details (3 Cols) -->
+            <div class="lg:col-span-3 flex flex-col gap-6">
+                
+                <!-- Game Viewport Box with Iframe Embed -->
+                <div id="gameViewportBox" class="bg-black rounded-xl p-2 neon-glow border border-neonGreen/40 relative">
+                    <div class="viewport-container">
+                        <div id="gameContainer" class="viewport-content bg-slate-950 flex items-center justify-center">
+                            <!-- Loading Indicator -->
+                            <div id="placeholderScreen" class="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-gray-900 to-black w-full h-full">
+                                <div class="w-16 h-16 rounded-full border-2 border-neonGreen border-t-transparent animate-spin mb-4"></div>
+                                <h3 id="loadingText" class="text-neonGreen font-mono text-lg tracking-wider">LOADING THE GAME    ...</h3>
+                            </div>
+                            
+                            <!-- Pure Embed Iframe Container -->
+                            <iframe id="gameIframe" 
+                                    class="w-full h-full border-0 rounded-lg relative z-0" 
+                                    allow="autoplay; fullscreen; camera; focus-without-user-activation; geolocation; gyroscope; accelerometer; magnetometer; microphone; payment; VR" 
+                                    allowfullscreen
+                                    onload="hideLoadingSpinner()">
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-cardBg rounded-xl p-5 border border-panelBorder flex flex-col gap-4">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-800 pb-4">
+                        <div>
+                            <h2 id="activeGameTitle" class="text-2xl md:text-3xl font-extrabold text-white tracking-wide">Slope Original 3D</h2>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="flex text-amber-400 text-sm">
+                                    ★★★★★
+                                </div>
+                                <span id="activeGameRating" class="text-xs text-gray-400 font-bold">4.9 / 5.0</span>
+                                <span id="activeGameCategory" class="bg-neonGreen/10 text-neonGreen text-xs px-2.5 py-0.5 rounded border border-neonGreen/30 font-semibold uppercase">3D / HABILIDAD</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="likeGame()" class="bg-black hover:bg-gray-900 text-gray-300 hover:text-neonGreen border border-gray-800 px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 10.133a1.5 1.5 0 00-.8.2z"></path></svg>
+                                <span id="likeCount">3,840</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Description & Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="md:col-span-2 text-gray-300 space-y-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-neonGreen">Descripción</h4>
+                            <p id="activeGameDesc" class="text-xs md:text-sm leading-relaxed text-gray-300">
+                                Baja a toda velocidad por una pista infinito neón esquivando obstáculos rojos y caídas al vacío en este clásico juego de reflejos.
+                            </p>
+                        </div>
+                        <div class="bg-black/60 p-3 rounded-lg border border-gray-800 space-y-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-neonGreen">Controles del Juego</h4>
+                            <div id="activeGameControls" class="text-xs text-gray-400 space-y-1 font-mono whitespace-pre-line">
+                                • [A / D] o [Flechas] Girar Izquierda / Derecha
+                                • [R] Reiniciar Nivel
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 py-2">
+                    <span class="text-xs text-gray-400 self-center mr-2 font-bold uppercase">Categorías:</span>
+                    <button onclick="filterCategory('ALL')" class="bg-neonGreen text-black text-xs font-bold px-3 py-1.5 rounded-full hover:bg-neonDarkGreen transition-all">TODOS</button>
+                    <button onclick="filterCategory('3D')" class="bg-cardBg hover:bg-gray-800 text-gray-300 border border-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full transition-all">3D</button>
+                    <button onclick="filterCategory('Carreras')" class="bg-cardBg hover:bg-gray-800 text-gray-300 border border-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full transition-all">CARRERAS</button>
+                    <button onclick="filterCategory('Acción')" class="bg-cardBg hover:bg-gray-800 text-gray-300 border border-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full transition-all">ACCIÓN</button>
+                    <button onclick="filterCategory('Habilidad')" class="bg-cardBg hover:bg-gray-800 text-gray-300 border border-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full transition-all">HABILIDAD</button>
+                </div>
+
+                <div class="space-y-4 mt-2">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2 border-l-4 border-neonGreen pl-3">
+                        <span>CATÁLOGO PRINCIPAL</span>
+                    </h3>
+                    
+                    <div id="mainCatalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <!-- Dynamic Games Catalog Cards Inserted via Javascript -->
+                    </div>
+                </div>
+
+                <div class="bg-cardBg rounded-xl p-5 border border-panelBorder mt-6 space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2 border-l-4 border-neonGreen pl-3">
+                        <span>COMUNIDAD & COMENTARIOS</span>
+                    </h3>
+
+                    <!-- Comment Input Form -->
+                    <form id="commentForm" onsubmit="submitComment(event)" class="space-y-3 bg-black/50 p-4 rounded-lg border border-gray-800">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input type="text" id="commentUser" required placeholder="Tu Nombre / Nickname..." 
+                                   class="bg-darkBg border border-gray-700 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neonGreen">
+                            <select id="commentRating" class="bg-darkBg border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonGreen">
+                                <option value="5">★★★★★ (5/5 Excelente)</option>
+                                <option value="4">★★★★☆ (4/5 Muy Bueno)</option>
+                                <option value="3">★★★☆☆ (3/5 Regular)</option>
+                            </select>
+                        </div>
+                        <textarea id="commentText" required rows="2" placeholder="Escribe tu opinión sobre el juego seleccionado..." 
+                                  class="w-full bg-darkBg border border-gray-700 rounded-lg p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neonGreen resize-none"></textarea>
+                        <button type="submit" class="bg-neonGreen hover:bg-neonDarkGreen text-black font-bold px-5 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors">
+                            Publicar Comentario
+                        </button>
+                    </form>
+
+                    <!-- Comments List -->
+                    <div id="commentsList" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                        <!-- Dynamic Comments Rendered Here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                
+                <!-- Side Games Panel 1: Destacados -->
+                <div class="bg-cardBg rounded-xl p-4 border border-panelBorder space-y-4">
+                    <h3 class="text-sm font-bold text-neonGreen tracking-wider uppercase flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span>DESTACADOS HOY</span>
+                        <span class="w-2 h-2 rounded-full bg-neonGreen"></span>
+                    </h3>
+                    <div id="featuredSidebarGrid" class="grid grid-cols-2 lg:grid-cols-1 gap-3">
+                        <!-- Sidebar Games With Hover Title/Tags Only -->
+                    </div>
+                </div>
+
+                <!-- Side Games Panel 2: Populares -->
+                <div class="bg-cardBg rounded-xl p-4 border border-panelBorder space-y-4">
+                    <h3 class="text-sm font-bold text-white tracking-wider uppercase flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span>MÁS JUGADOS</span>
+                        <span class="text-xs text-neonGreen font-mono">HOT 🔥</span>
+                    </h3>
+                    <div id="popularSidebarGrid" class="grid grid-cols-2 lg:grid-cols-1 gap-3">
+                        <!-- Popular Games With Hover Title/Tags Only -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-black border-t border-gray-900 py-6 px-4 md:px-8 mt-12 text-xs text-gray-500 text-center">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <p class="font-bold text-gray-400">slope9.io &copy; 2026 - Portal de Juegos Embed Unblocked</p>
+                <p class="text-gray-600 mt-1">Todos los juegos pertenecen a sus respectivos desarrolladores.</p>
+            </div>
+            <div class="flex space-x-4 text-gray-400">
+                <a href="#" class="hover:text-neonGreen transition-colors">Términos</a>
+                <a href="#" class="hover:text-neonGreen transition-colors">Privacidad</a>
+                <a href="#" class="hover:text-neonGreen transition-colors">Contacto</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /*
+        =====================================================================================
+        |  INSTRUCCIONES PARA AGREGAR TUS PROPIOS JUEGOS EMBED DESDE EL CÓDIGO
+        =====================================================================================
+        | Solo copia uno de los bloques dentro de GAMES_DATABASE y cámbiale los datos:
+        |
+        | {
+        |   id: 'identificador-unico',
+        |   title: 'NOMBRE DEL JUEGO',
+        |   category: '3D / CARRERAS / ACCION',
+        |   tags: ['3D', 'Carreras'],
+        |   rating: '4.9',
+        |   likes: 1200,
+        |   desc: 'Descripción de tu juego...',
+        |   controls: '• [Flechas / WASD] Controles...',
+        |   url: 'https://tu-enlace-embed-de-juego.com/juego.html',
+        |   cover: 'https://enlace-a-la-imagen-de-portada.jpg'
+        | },
+        =====================================================================================
+        */
+
+        const GAMES_DATABASE = [
+            {
+                id: 'slope-game',
+                title: 'Slope Original 3D',
+                category: '3D / HABILIDAD',
+                tags: ['3D', 'Carreras', 'Tech'],
+                rating: '4.9',
+                likes: 3840,
+                desc: 'Baja a toda velocidad por una pista infinito neón esquivando bloques rojos y caídas al vacío en este clásico juego de reflejos.',
+                controls: '• [A / D] o [Flechas] Girar Izquierda / Derecha\n• [R] Reiniciar Nivel',
+                url: 'https://sz-games.github.io/Slope.html',
+                cover: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxyD8Hf25deGLt_Ew_8PGo90xkFPSySIABZT5ku_VPjw&s=10'
+            },
+            {
+                id: 'snow-rider',
+                title: 'Snow Rider 3D',
+                category: 'CARRERAS / 3D',
+                tags: ['Nieve', '3D', 'Velocidad'],
+                rating: '4.8',
+                likes: 2420,
+                desc: 'Pilota un trineo veloz por pendientes alpinas cubiertas de nieve. Esquiva gigantescos árboles, rocas y precipicios mientras rompes tu récord de distancia.',
+                controls: '• [Flechas / A-D] Girar Izq / Der\n• [Espacio] Saltar obstáculos\n• [R] Reiniciar',
+                url: 'https://grogs.github.io/snowrider3d/',
+                cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co5vzs.jpg'
+            },
+            {
+                id: 'drive-mad',
+                title: 'Drive Mad',
+                category: 'CARRERAS / FÍSICAS',
+                tags: ['Autos', 'Físicas', '4x4'],
+                rating: '4.8',
+                likes: 2900,
+                desc: 'Maneja un camión monster truck por puentes frágiles y obstáculos inverosímiles sin voltear el vehículo.',
+                controls: '• [W / D / Flecha Arriba] Avanzar\n• [A / S / Flecha Abajo] Retroceder',
+                url: 'https://drivemad.github.io/drive-mad.html',
+                cover: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 'moto-x3m',
+                title: 'Moto X3M',
+                category: 'CARRERAS / MOTOS',
+                tags: ['Motos', 'Acción', 'Físicas'],
+                rating: '4.9',
+                likes: 4200,
+                desc: 'Conduce tu motocicleta por circuitos llenos de sierras circulares, explosivos y rampas mortales.',
+                controls: '• [Flechas Arriba/Abajo] Acelerar / Frenar\n• [Flechas Izq/Der] Inclinación',
+                url: 'https://moto-x3m.github.io/moto-x3m.html',
+                cover: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 'wave-rider',
+                title: 'Retro Bowl',
+                category: 'ACCION / DEPORTES',
+                tags: ['Deportes', 'Estrategia', 'Retro'],
+                rating: '4.7',
+                likes: 1850,
+                desc: 'Dirige tu propio equipo de fútbol americano, gestiona contrataciones y gana el campeonato con físicas arcade retro.',
+                controls: '• [Mouse / Teclado] Pasar el balón, correr y esquivar defensas.',
+                url: 'https://retrobowl.github.io/retro-bowl.html',
+                cover: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80'
+            },
+            {
+                id: 'monkey-mart',
+                title: 'Monkey Mart',
+                category: 'HABILIDAD / GESTIÓN',
+                tags: ['Gestión', 'Casual', 'Simulación'],
+                rating: '4.6',
+                likes: 1540,
+                desc: 'Administra tu propio supermercado de monos. Siembra frutas, abastece los estantes y expande tu negocio.',
+                controls: '• [Flechas / WASD] Desplazar al personaje por la tienda.',
+                url: 'https://monkeymart.github.io/monkey-mart.html',
+                cover: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80'
+            }
+        ];
+
+        let activeGame = GAMES_DATABASE[0];
+
+        function createGameCardHTML(game, aspectClass = 'h-36') {
+            return `
+                <div onclick="selectGame('${game.id}')" class="game-card ${aspectClass} bg-cardBg border border-panelBorder rounded-xl cursor-pointer neon-glow-hover">
+                    <img src="${game.cover}" alt="${game.title}" class="game-card-img" onerror="this.src='https://placehold.co/400x300/121212/00ff66?text=${encodeURIComponent(game.title)}'">
+                    <!-- Overlay only visible on Hover -->
+                    <div class="game-card-overlay">
+                        <span class="text-xs text-neonGreen font-mono font-bold uppercase tracking-wider">${game.category}</span>
+                        <h4 class="text-sm font-bold text-white leading-snug">${game.title}</h4>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            ${game.tags.map(tag => `<span class="bg-black/80 text-gray-300 text-[10px] px-1.5 py-0.5 rounded border border-gray-700">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderInterface() {
+            const catalogGrid = document.getElementById('mainCatalogGrid');
+            const featuredGrid = document.getElementById('featuredSidebarGrid');
+            const popularGrid = document.getElementById('popularSidebarGrid');
+
+            // Render Catalog
+            catalogGrid.innerHTML = GAMES_DATABASE.map(game => createGameCardHTML(game, 'h-40')).join('');
+
+            // Render Sidebars
+            featuredGrid.innerHTML = GAMES_DATABASE.slice(0, 3).map(game => createGameCardHTML(game, 'h-28')).join('');
+            popularGrid.innerHTML = GAMES_DATABASE.slice(3, 6).map(game => createGameCardHTML(game, 'h-28')).join('');
+        }
+
+        function selectGame(gameId) {
+            const found = GAMES_DATABASE.find(g => g.id === gameId);
+            if (!found) return;
+
+            activeGame = found;
+
+            // Update UI Labels
+            document.getElementById('activeGameTitle').innerText = activeGame.title;
+            document.getElementById('activeGameRating').innerText = `${activeGame.rating} / 5.0`;
+            document.getElementById('activeGameCategory').innerText = activeGame.category;
+            document.getElementById('activeGameDesc').innerText = activeGame.desc;
+            document.getElementById('activeGameControls').innerText = activeGame.controls;
+            document.getElementById('likeCount').innerText = activeGame.likes.toLocaleString();
+
+            // Scroll Smoothly to Top Viewer
+            document.getElementById('gameViewportBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Load Game Content into Iframe
+            loadGameIframe();
+
+            // Refresh Comments
+            loadComments();
+        }
+
+        function loadGameIframe() {
+            const iframe = document.getElementById('gameIframe');
+            const placeholder = document.getElementById('placeholderScreen');
+
+            // Show Loading Spinner
+            placeholder.classList.remove('hidden');
+            document.getElementById('loadingText').innerText = `CARGANDO ${activeGame.title.toUpperCase()}...`;
+
+            // Set Embed URL
+            iframe.src = activeGame.url;
+        }
+
+        function hideLoadingSpinner() {
+            const placeholder = document.getElementById('placeholderScreen');
+            if (placeholder) {
+                placeholder.classList.add('hidden');
+            }
+        }
+
+        function filterGames() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const catalogGrid = document.getElementById('mainCatalogGrid');
+
+            const filtered = GAMES_DATABASE.filter(g => 
+                g.title.toLowerCase().includes(query) || 
+                g.category.toLowerCase().includes(query) ||
+                g.tags.some(t => t.toLowerCase().includes(query))
+            );
+
+            catalogGrid.innerHTML = filtered.length > 0 
+                ? filtered.map(game => createGameCardHTML(game, 'h-40')).join('')
+                : `<p class="col-span-full text-center text-gray-500 py-8">No se encontraron juegos para "${query}"</p>`;
+        }
+
+        function filterCategory(cat) {
+            const catalogGrid = document.getElementById('mainCatalogGrid');
+            if (cat === 'ALL') {
+                catalogGrid.innerHTML = GAMES_DATABASE.map(game => createGameCardHTML(game, 'h-40')).join('');
+                return;
+            }
+            const filtered = GAMES_DATABASE.filter(g => g.category.toUpperCase().includes(cat.toUpperCase()) || g.tags.some(t => t.toUpperCase() === cat.toUpperCase()));
+            catalogGrid.innerHTML = filtered.map(game => createGameCardHTML(game, 'h-40')).join('');
+        }
+
+        function likeGame() {
+            activeGame.likes += 1;
+            document.getElementById('likeCount').innerText = activeGame.likes.toLocaleString();
+        }
+
+        function loadComments() {
+            const list = document.getElementById('commentsList');
+            const key = `slope9_comments_${activeGame.id}`;
+            const stored = JSON.parse(localStorage.getItem(key) || '[]');
+
+            if (stored.length === 0) {
+                list.innerHTML = `<p class="text-xs text-gray-500 italic">No hay comentarios aún para ${activeGame.title}. ¡Sé el primero!</p>`;
+                return;
+            }
+
+            list.innerHTML = stored.map(c => `
+                <div class="bg-black/60 p-3 rounded-lg border border-gray-800 text-xs space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-neonGreen">${escapeHTML(c.user)}</span>
+                        <span class="text-amber-400 font-mono">${'★'.repeat(c.rating)}</span>
+                    </div>
+                    <p class="text-gray-300">${escapeHTML(c.text)}</p>
+                    <span class="text-[10px] text-gray-600 block">${c.date}</span>
+                </div>
+            `).join('');
+        }
+
+        function submitComment(e) {
+            e.preventDefault();
+            const user = document.getElementById('commentUser').value.trim();
+            const rating = parseInt(document.getElementById('commentRating').value);
+            const text = document.getElementById('commentText').value.trim();
+
+            if (!user || !text) return;
+
+            const key = `slope9_comments_${activeGame.id}`;
+            const stored = JSON.parse(localStorage.getItem(key) || '[]');
+
+            const newComment = {
+                user,
+                rating,
+                text,
+                date: new Date().toLocaleDateString()
+            };
+
+            stored.unshift(newComment);
+            localStorage.setItem(key, JSON.stringify(stored));
+
+            document.getElementById('commentText').value = '';
+            loadComments();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        function toggleFullScreen() {
+            const box = document.getElementById('gameViewportBox');
+            if (!document.fullscreenElement) {
+                box.requestFullscreen().catch(err => alert(`Error activando pantalla completa: ${err.message}`));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        window.onload = function() {
+            renderInterface();
+            selectGame('slope-game');
+        };
+    </script>
+</body>
+</html>
